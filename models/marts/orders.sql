@@ -75,3 +75,13 @@ customer_order_count as (
 )
 
 select * from customer_order_count
+{% if is_incremental() %}
+  {% if var("start_date", False) and var("end_date", False) %}
+    {{ log('Loading ' ~ this ~ ' incrementally (start_date: ' ~ var("start_date") ~ ', end_date: ' ~ var("end_date") ~ ')', info=True) }}
+    where ordered_at >= '{{ var("start_date") }}'
+    AND ordered_at < '{{ var("end_date") }}'
+  {% else %}
+    where ordered_at > (select max(ordered_at) from {{ this }})
+    {{ log('Loading ' ~ this ~ ' incrementally (all missing dates)', info=True)}}
+  {% endif %}
+{% endif %}
